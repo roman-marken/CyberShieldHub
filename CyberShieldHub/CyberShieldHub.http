@@ -1,0 +1,58 @@
+@CyberShieldHub_HostAddress = http://localhost:5298
+@token = PASTE_ACCESS_TOKEN_HERE
+
+### Вхід. Результат accessToken вставте у змінну token вище.
+POST {{CyberShieldHub_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "demo",
+  "password": "Demo!2026"
+}
+
+### Невдалий вхід. Усього 6 швидких спроб з одного IP => 429.
+POST {{CyberShieldHub_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "demo",
+  "password": "wrong"
+}
+
+### Рахунки + CORS + захисні заголовки
+GET {{CyberShieldHub_HostAddress}}/api/banking/accounts
+Authorization: Bearer {{token}}
+Origin: http://localhost:3000
+
+### Симуляція переказу. 10 швидких запитів => 200, одинадцятий => 429.
+POST {{CyberShieldHub_HostAddress}}/api/banking/transfers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fromAccountId": 1,
+  "toAccountId": 2,
+  "amount": 10
+}
+
+### XSS: script видаляється, b зберігається
+POST {{CyberShieldHub_HostAddress}}/api/feedback
+Content-Type: application/json
+
+{
+  "comment": "Дякую! <script>alert('XSS')</script><b>Все супер</b>"
+}
+
+### Безпечне форматування: isXssDetected=false
+POST {{CyberShieldHub_HostAddress}}/api/feedback
+Content-Type: application/json
+
+{
+  "comment": "<b>Дякую!</b><br/>Чудовий сервіс."
+}
+
+### CORS preflight
+OPTIONS {{CyberShieldHub_HostAddress}}/api/banking/transfers
+Origin: http://localhost:3000
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: authorization,content-type
